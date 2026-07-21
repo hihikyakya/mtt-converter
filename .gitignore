@@ -217,5 +217,8 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
-
+# Claude Code
 .claude
+
+# In test
+.test_resource
