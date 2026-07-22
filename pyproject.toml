@@ -1,7 +1,7 @@
 [project]
 name = "mtt-converter"
 version = "1.0.1"
-description = "Add your description here"
+description = "multimodal utility module. image(caption, ocr), document(also ocr), 3d model available."
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.12"
