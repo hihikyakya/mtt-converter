@@ -10,6 +10,14 @@ from mtt.types import ModeType, CaptionModelType as ModelType
 MODEL_NAMES="\n".join(get_args(ModelType))
 
 class MultiModalConverter:
+    f'''
+    [params]
+    api_key: above model's api key
+    model_name: llm model name 
+    >> 
+    {MODEL_NAMES}
+    '''
+    
     MODE_ESTIMATE_MAP: dict[str, ModeType] = {
         ".jpg": "caption",
         ".jpeg": "caption",
@@ -36,14 +44,6 @@ class MultiModalConverter:
     }
 
     def __init__(self, **kwargs):
-        f'''
-        [params]
-        api_key: above model's api key
-        model_name: llm model name 
-        >> 
-        {MODEL_NAMES}
-        '''
-        
         # TODO: 나중에 임베딩 모델 api 관련해서 파라미터를 받을 수 있게하거나 할듯. 그리고 일부 시스템 프롬프트를 조절할 수 있게 할듯.
         self._docling_service = DoclingService()
         self._mesh_llm_service = MeshLLMService()
