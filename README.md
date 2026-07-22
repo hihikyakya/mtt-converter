@@ -4,8 +4,15 @@ multiform data to text converter — 문서, 이미지, 3D 모델 등 다양한 
 
 ## 설치
 
+### pip
+
 ```bash
 pip install mtt-converter
+```
+
+### uv
+```bash
+uv add mtt-converter
 ```
 
 Python 3.12 이상이 필요합니다.
@@ -54,7 +61,6 @@ mc.convert("scanned_page.png", mode="ocr")
 ### 이미지 캡셔닝
 
 Gemini, GPT-4o, Claude 중 하나로 이미지를 설명합니다. 사용할 모델과 API 키는 `MultiModalConverter` 생성 시 지정합니다.
-* **Token cost**가 발생할 수 있습니다.
 
 ```python
 mc = MultiModalConverter(model_name="gemini-3.5-flash", api_key="...")
@@ -64,6 +70,7 @@ mc.convert("photo.jpg", mode="caption", sub_prompt="이 사진을 한국어로 �
 - `model_name`: `"gemini-*"` / `"gpt-4o"` / `"claude-*"` 중 하나의 실제 API 모델 id (기본값 `"gemini-3.5-flash"`)
 - `api_key`를 넘기지 않으면 각 provider SDK가 환경 변수(`GOOGLE_API_KEY`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`)에서 자동으로 읽습니다.
 - `sub_prompt`를 지정하지 않으면 기본 프롬프트(`"Describe image in detail."`)가 사용됩니다.
+    - **Token cost**가 발생할 수 있습니다.
 
 ### 3D 모델 파싱
 
