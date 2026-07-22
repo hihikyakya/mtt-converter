@@ -1,5 +1,5 @@
+import re
 from pathlib import Path
-
 from docling.document_converter import DocumentConverter
 
 from mtt.utils.docling_utils import convert_document, document_to_markdown, document_to_text
@@ -17,4 +17,9 @@ class DoclingService:
 
     def to_text(self, input_path: str | Path, markdown=True) -> str:
         result = convert_document(self._converter, input_path)
-        return document_to_markdown(result) if markdown else document_to_text(result)
+
+        text=document_to_markdown(result) if markdown else document_to_text(result)
+
+        # Rapid OCR exception
+        text=re.sub(r"RapidOCR returned empty result!", "<!-- empty OCR result -->", text)
+        return text

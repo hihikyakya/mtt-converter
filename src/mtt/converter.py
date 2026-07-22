@@ -1,11 +1,13 @@
 import os
 from pathlib import Path
+from typing import get_args
 
 from mtt.service.docling import DoclingService
 from mtt.service.mesh_llm import MeshLLMService
 from mtt.service.caption_explaner import CaptionExplanerService
-from mtt.types import ModeType
+from mtt.types import ModeType, CaptionModelType as ModelType
 
+MODEL_NAMES="\n".join(get_args(ModelType))
 
 class MultiModalConverter:
     MODE_ESTIMATE_MAP: dict[str, ModeType] = {
@@ -34,11 +36,19 @@ class MultiModalConverter:
     }
 
     def __init__(self, **kwargs):
+        f'''
+        [params]
+        api_key: above model's api key
+        model_name: llm model name 
+        >> 
+        {MODEL_NAMES}
+        '''
+        
         # TODO: 나중에 임베딩 모델 api 관련해서 파라미터를 받을 수 있게하거나 할듯. 그리고 일부 시스템 프롬프트를 조절할 수 있게 할듯.
         self._docling_service = DoclingService()
         self._mesh_llm_service = MeshLLMService()
         self._caption_explaner_service = CaptionExplanerService(
-            model_name=kwargs.get("model_name", "gemini-3.5-flash"), # default: gemini
+            model_name=kwargs.get("model_name", "gemini-2.5-flash"), # default: gemini
             api_key=kwargs.get("api_key")
         )
 

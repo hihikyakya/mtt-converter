@@ -1172,7 +1172,7 @@ wheels = [
 
 [[package]]
 name = "mtt-converter"
-version = "0.1.0"
+version = "1.0.2"
 source = { editable = "." }
 dependencies = [
     { name = "anthropic" },
@@ -1181,7 +1181,6 @@ dependencies = [
     { name = "google-genai" },
     { name = "markdown" },
     { name = "openai" },
-    { name = "python-dotenv" },
 ]
 
 [package.metadata]
@@ -1192,7 +1191,6 @@ requires-dist = [
     { name = "google-genai", specifier = ">=2.12.1" },
     { name = "markdown", specifier = ">=3.10.2" },
     { name = "openai", specifier = ">=2.46.0" },
-    { name = "python-dotenv", specifier = ">=1.2.2" },
 ]
 
 [[package]]
