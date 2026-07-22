@@ -2,7 +2,7 @@ from pathlib import Path
 
 from docling.document_converter import DocumentConverter
 
-from mtt.utils.docling_utils import convert_document, document_to_markdown
+from mtt.utils.docling_utils import convert_document, document_to_markdown, document_to_text
 
 
 class DoclingService:
@@ -15,6 +15,6 @@ class DoclingService:
     def __init__(self, converter: DocumentConverter | None = None):
         self._converter = converter or DocumentConverter()
 
-    def to_text(self, input_path: str | Path) -> str:
+    def to_text(self, input_path: str | Path, markdown=True) -> str:
         result = convert_document(self._converter, input_path)
-        return document_to_markdown(result)
+        return document_to_markdown(result) if markdown else document_to_text(result)

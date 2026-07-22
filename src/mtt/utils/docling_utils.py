@@ -12,3 +12,7 @@ def convert_document(converter: DocumentConverter, input_path: str | Path) -> Co
 def document_to_markdown(result: ConversionResult) -> str:
     '''ConversionResult에서 마크다운 텍스트를 추출하는 최하위 함수.'''
     return result.document.export_to_markdown()
+
+def document_to_text(result: ConversionResult) -> str:
+    '''ConversionResult에서 마크다운 텍스트를 추출하는 최하위 함수.'''
+    return result.document.export_to_text()
