@@ -7,15 +7,24 @@ from mtt.service.mesh_llm import MeshLLMService
 from mtt.service.caption_explaner import CaptionExplanerService
 from mtt.types import ModeType, CaptionModelType as ModelType
 
-MODEL_NAMES="\n".join(get_args(ModelType))
+
+def print_model_list():
+    print(">>> model_list")
+    for model_name in get_args(ModelType):
+        print(model_name)
+
+
 
 class MultiModalConverter:
-    f'''
+    '''
     [params]
     api_key: above model's api key
     model_name: llm model name 
-    >> 
-    {MODEL_NAMES}
+    ```python
+    from mtt import print_model_list
+
+    print_model_list()
+    ```
     '''
     
     MODE_ESTIMATE_MAP: dict[str, ModeType] = {
