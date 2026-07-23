@@ -40,9 +40,9 @@ If `mode` is not provided, it is inferred from the file extension, and a warning
 | `doc` | Convert documents to text (uses [docling](https://github.com/docling-project/docling)) | `.pdf` `.doc` `.docx` `.ppt` `.pptx` `.xls` `.xlsx` `.html` `.htm` `.md` `.csv` |
 | `ocr` | Extract text from images via OCR (uses docling) | any image file, when called directly |
 | `caption` | Describe/caption image content using a multimodal LLM | `.jpg` `.jpeg` `.tif` `.tiff` `.png` `.bmp` |
-| `3d_parser` | Parse 3D model files and return a geometry/metadata summary (bounding box, surface area, volume, materials, etc.) as text | `.stl` `.obj` `.ply` `.3mf` `.glb` `.gltf` `.fbx` `.step` `.stp` `.usd` `.usda` `.usdz` |
+| `3d-parser` | Parse 3D model files and return a geometry/metadata summary (bounding box, surface area, volume, materials, etc.) as text | `.stl` `.obj` `.ply` `.3mf` `.glb` `.gltf` `.fbx` `.step` `.stp` `.usd` `.usda` `.usdz` |
 
-> `.fbx`, `.step`/`.stp`, and `.usd`/`.usda`/`.usdz` are supported by `scan3dmodel(..., mode="3d_parser")`, but are not yet included in automatic extension detection — pass `mode="3d_parser"` explicitly for these formats.
+> `.fbx`, `.step`/`.stp`, and `.usd`/`.usda`/`.usdz` are supported by `scan3dmodel(..., mode="3d-parser")`, but are not yet included in automatic extension detection — pass `mode="3d-parser"` explicitly for these formats.
 
 ## Usage examples
 
