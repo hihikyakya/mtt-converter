@@ -1,6 +1,6 @@
 [project]
 name = "mtt-converter"
-version = "1.1.1"
+version = "1.2.0"
 description = "multimodal utility module. image(caption, ocr), document(also ocr), 3d model available."
 readme = "README.md"
 license = "MIT"

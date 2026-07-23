@@ -10,6 +10,7 @@ from mtt.utils.mesh_llm_utils import (
     parsing_fbx,
     parsing_step,
     parsing_usd,
+    parsing_gltf,
 )
 
 
@@ -39,4 +40,6 @@ class MeshLLMService:
             return parsing_step(input_path, markdown=markdown, lang=lang)
         elif ext in (".usd", ".usda", ".usdz"):
             return parsing_usd(input_path, markdown=markdown, lang=lang)
+        elif ext in (".glb", ".gltf"):
+            return parsing_gltf(input_path, markdown=markdown, lang=lang)
         raise ValueError(f"Unreadable file or incorrect extension. input_path: {input_path}")

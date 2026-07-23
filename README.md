@@ -40,10 +40,9 @@ If `mode` is not provided, it is inferred from the file extension, and a warning
 | `doc` | Convert documents to text (uses [docling](https://github.com/docling-project/docling)) | `.pdf` `.doc` `.docx` `.ppt` `.pptx` `.xls` `.xlsx` `.html` `.htm` `.md` `.csv` |
 | `ocr` | Extract text from images via OCR (uses docling) | any image file, when called directly |
 | `caption` | Describe/caption image content using a multimodal LLM | `.jpg` `.jpeg` `.tif` `.tiff` `.png` `.bmp` |
-| `3dmodel` | Parse 3D model files and return a geometry/metadata summary (bounding box, surface area, volume, materials, etc.) as text | `.stl` `.obj` `.ply` `.3mf` `.fbx` `.step` `.stp` `.usd` `.usda` `.usdz` |
+| `3d_parser` | Parse 3D model files and return a geometry/metadata summary (bounding box, surface area, volume, materials, etc.) as text | `.stl` `.obj` `.ply` `.3mf` `.glb` `.gltf` `.fbx` `.step` `.stp` `.usd` `.usda` `.usdz` |
 
-> `.glb` is currently mapped to `3dmodel` by extension guessing, but no parser is implemented for it yet.
-> `.fbx`, `.step`/`.stp`, and `.usd`/`.usda`/`.usdz` are supported by `scan3dmodel(..., mode="3dmodel")`, but are not yet included in automatic extension detection — pass `mode="3dmodel"` explicitly for these formats.
+> `.fbx`, `.step`/`.stp`, and `.usd`/`.usda`/`.usdz` are supported by `scan3dmodel(..., mode="3d_parser")`, but are not yet included in automatic extension detection — pass `mode="3d_parser"` explicitly for these formats.
 
 ## Usage examples
 
@@ -76,7 +75,7 @@ mc.convert("photo.jpg", mode="caption", sub_prompt="Describe this photo in Korea
 ### 3D model parsing
 
 ```python
-mc.convert("model.stl", mode="3dmodel")
+mc.convert("model.stl", mode="3d-parser")
 ```
 
 Returns a text summary including solid name, triangle count, bounding box, surface area, and (approximate) volume.
@@ -84,14 +83,21 @@ Returns a text summary including solid name, triangle count, bounding box, surfa
 For CAD/scene formats, the summary is tailored to the format instead of raw triangle stats:
 
 ```python
-mc.convert("part.step", mode="3dmodel")   # STEP header (author, organization, schema) + PRODUCT names
-mc.convert("scene.usdz", mode="3dmodel")  # USD prim hierarchy, or USDZ package contents
-mc.convert("model.fbx", mode="3dmodel")   # FBX models/materials/textures
+mc.convert("part.step", mode="3d-parser")   # STEP header (author, organization, schema) + PRODUCT names
+mc.convert("scene.usdz", mode="3d-parser")  # USD prim hierarchy, or USDZ package contents
+mc.convert("model.fbx", mode="3d-parser")   # FBX models/materials/textures
 ```
 
 - `.step`/`.stp` are parsed as plain text (no OpenCascade dependency required) to extract header metadata and `PRODUCT` entities.
 - `.usd`/`.usda` are parsed via the Pixar USD SDK (`pxr`) when available, falling back to a plain-text `def Type "Name"` scan otherwise; `.usdz` archives are also listed as a zip package.
 - ASCII `.fbx` files are parsed as text; binary `.fbx` files require the optional `pyassimp` dependency.
+
+`.glb`/`.gltf` are also supported, and are already covered by automatic extension detection:
+
+```python
+mc.convert("scene.gltf")  # mode is inferred as "3d-parser"
+mc.convert("scene.glb")   # ASCII glTF (JSON) or binary GLB, detected automatically
+```
 
 ## Output format
 
@@ -110,7 +116,8 @@ The default is `markdown=True`.
 - ✅ Image captioning (Gemini / GPT-4o / Claude)
 - ✅ 3D model parsing: `.stl`, `.obj`, `.ply`, `.3mf`
 - ✅ 3D model parsing: `.fbx`, `.step`/`.stp`, `.usd`/`.usda`/`.usdz`
-- 🚧 Add these formats to automatic extension detection, and `.glb` support
+- ✅ 3D model parsing: `.glb`, `.gltf`
+- 🚧 Add `.fbx`, `.step`/`.stp`, `.usd`/`.usda`/`.usdz` to automatic extension detection
 - 🚧 PointNet-based embeddings: encode models, build a similarity-search DB from the existing parsers, and retrieve/remap similar shapes (planned for v2)
 - 🚧 Provide an embedding function (if time permits)
 

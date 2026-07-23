@@ -8,6 +8,7 @@ from mtt.utils.tools.threemf_parser import _parse_3mf
 from mtt.utils.tools.fbx_parser import _is_binary_fbx, _parse_ascii_fbx, _parse_binary_fbx
 from mtt.utils.tools.step_parser import _parse_step
 from mtt.utils.tools.usd_parser import _is_usdz, _list_usdz_members, _parse_usd_with_pxr, _parse_usd_text
+from mtt.utils.tools.gltf_parser import _is_glb, _parse_glb, _parse_gltf
 from mtt.utils.tools.mesh_geometry import fan_triangulate, compute_triangle_stats, format_mesh_report
 
 _FBX_LABELS: dict[LangType, dict[str, str]] = {
@@ -58,6 +59,39 @@ _STEP_LABELS: dict[LangType, dict[str, str]] = {
         "schema": "FILE_SCHEMA",
         "product_count": "PRODUCT 개수",
         "product_names": "PRODUCT 이름",
+        "none": "(없음)",
+    },
+}
+
+_GLTF_LABELS: dict[LangType, dict[str, str]] = {
+    "eng": {
+        "title": "glTF Parsing Result",
+        "format": "Format",
+        "version": "glTF version",
+        "generator": "Generator",
+        "scene_count": "Scene count",
+        "node_count": "Node count",
+        "animation_count": "Animation count",
+        "mesh_count": "Mesh count",
+        "mesh_names": "Mesh names",
+        "material_count": "Material count",
+        "material_names": "Material names",
+        "textures": "Textures",
+        "none": "(none)",
+    },
+    "kor": {
+        "title": "glTF 파싱 결과",
+        "format": "포맷",
+        "version": "glTF 버전",
+        "generator": "생성기(Generator)",
+        "scene_count": "씬 개수",
+        "node_count": "노드 개수",
+        "animation_count": "애니메이션 개수",
+        "mesh_count": "메시 개수",
+        "mesh_names": "메시 이름",
+        "material_count": "머티리얼 개수",
+        "material_names": "머티리얼 이름",
+        "textures": "텍스처",
         "none": "(없음)",
     },
 }
@@ -395,4 +429,67 @@ def parsing_usd(input_path: str | Path, markdown: bool = True, lang: LangType = 
             lines.append(f"{labels['member_count']}: {len(usdz_members)}")
             lines.append(f"{labels['member_list']}:")
             lines += [f"  {member}" for member in usdz_members]
+        return "\n".join(lines)
+
+
+def parsing_gltf(input_path: str | Path, markdown: bool = True, lang: LangType = "eng") -> str:
+    """
+    glTF/GLB(.gltf/.glb) 파일을 파싱해 씬 구조 요약 정보를 문자열로 반환한다.
+
+    ASCII glTF(.gltf)는 그 자체가 JSON이라 표준 json 모듈로 직접 읽고,
+    GLB(.glb)는 12바이트 헤더 뒤에 오는 JSON/BIN 청크를 분리해 같은 방식으로 읽는다.
+
+    Args:
+        input_path: glTF/GLB 파일 경로 (.gltf/.glb)
+        markdown: True면 마크다운 형식, False면 일반 텍스트로 반환
+        lang: 출력 언어("eng"/"kor")
+
+    Returns:
+        파싱 결과 요약 문자열
+    """
+    path = Path(input_path)
+    raw = path.read_bytes()
+    labels = _GLTF_LABELS.get(lang, _GLTF_LABELS["eng"])
+
+    if _is_glb(raw):
+        data = _parse_glb(raw)
+        fmt_type = "GLB (binary glTF)"
+    else:
+        data = _parse_gltf(raw.decode("utf-8", errors="replace"))
+        fmt_type = "glTF (ASCII/JSON)"
+
+    if markdown:
+        lines = [
+            f"# {labels['title']}: {path.name}",
+            "",
+            f"- **{labels['format']}**: {fmt_type}",
+            f"- **{labels['version']}**: {data.version or labels['none']}",
+            f"- **{labels['generator']}**: {data.generator or labels['none']}",
+            f"- **{labels['scene_count']}**: {data.scene_count:,}",
+            f"- **{labels['node_count']}**: {data.node_count:,}",
+            f"- **{labels['animation_count']}**: {data.animation_count:,}",
+            f"- **{labels['mesh_count']}**: {len(data.mesh_names):,}",
+            f"- **{labels['mesh_names']}**: {', '.join(data.mesh_names) if data.mesh_names else labels['none']}",
+            f"- **{labels['material_count']}**: {len(data.material_names):,}",
+            f"- **{labels['material_names']}**: {', '.join(data.material_names) if data.material_names else labels['none']}",
+        ]
+        if data.texture_uris:
+            lines.append(f"- **{labels['textures']}**: {', '.join(data.texture_uris)}")
+        return "\n".join(lines)
+    else:
+        lines = [
+            f"{labels['title']}: {path.name}",
+            f"{labels['format']}: {fmt_type}",
+            f"{labels['version']}: {data.version or labels['none']}",
+            f"{labels['generator']}: {data.generator or labels['none']}",
+            f"{labels['scene_count']}: {data.scene_count}",
+            f"{labels['node_count']}: {data.node_count}",
+            f"{labels['animation_count']}: {data.animation_count}",
+            f"{labels['mesh_count']}: {len(data.mesh_names)}",
+            f"{labels['mesh_names']}: {', '.join(data.mesh_names) if data.mesh_names else labels['none']}",
+            f"{labels['material_count']}: {len(data.material_names)}",
+            f"{labels['material_names']}: {', '.join(data.material_names) if data.material_names else labels['none']}",
+        ]
+        if data.texture_uris:
+            lines.append(f"{labels['textures']}: {', '.join(data.texture_uris)}")
         return "\n".join(lines)

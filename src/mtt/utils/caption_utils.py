@@ -4,6 +4,7 @@ import anthropic
 from openai import OpenAI
 from PIL import Image
 from pathlib import Path
+from dotenv import load_dotenv
 
 from mtt.types import CaptionModelType as ModelType
 from mtt.utils.tools.document_tools import _remove_markdown
@@ -17,6 +18,10 @@ def caption_explain(input_path:str | Path, model_name:ModelType,
                       ):
     if "gemini" in model_name.lower():
         image=Image.open(input_path)
+
+        if api_key is None:
+            load_dotenv()
+            api_key = os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
 
         gemini=genai.Client(api_key=api_key) if api_key else genai.Client()
 
@@ -36,6 +41,10 @@ def caption_explain(input_path:str | Path, model_name:ModelType,
     elif "claude" in model_name.lower():
         media_type, image_b64 = _image_to_base64(input_path)
 
+        if api_key is None:
+            load_dotenv()
+            api_key = os.getenv("ENTHROPIC_API_KEY") or os.getenv("CLAUDE_API_KEY")
+
         claude = anthropic.Anthropic(api_key=api_key) if api_key else anthropic.Anthropic()
 
         result = claude.messages.create(
@@ -54,6 +63,10 @@ def caption_explain(input_path:str | Path, model_name:ModelType,
         )
     elif "gpt" in model_name.lower():
         media_type, image_b64 = _image_to_base64(input_path)
+
+        if api_key is None:
+            load_dotenv()
+            api_key = os.getenv("CHATGPT_API_KEY") or os.getenv("OPENAI_API_KEY")
 
         gpt = OpenAI(api_key=api_key) if api_key else OpenAI()
 

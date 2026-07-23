@@ -45,11 +45,12 @@ class MultiModalConverter:
         ".htm": "doc",
         ".md": "doc",
         ".csv": "doc",
-        ".stl": "3dmodel",
-        ".obj": "3dmodel",
-        ".ply": "3dmodel",
-        ".3mf": "3dmodel",
-        ".glb": "3dmodel",
+        ".stl": "3d-parser",
+        ".obj": "3d-parser",
+        ".ply": "3d-parser",
+        ".3mf": "3d-parser",
+        ".glb": "3d-parser",
+        ".gltf": "3d-parser"
     }
 
     LANG: LangType = "eng"  # default : eng
@@ -78,7 +79,7 @@ class MultiModalConverter:
         elif mode == "ocr":
             # input 가공 가능
             return self.ocr(input_path, markdown=markdown)
-        elif mode == "3dmodel":
+        elif mode == "3d-parser":
             # input 가공 가능함.
             return self.scan3dmodel(input_path, markdown=markdown)
         elif mode in ["doc", "docs", "document"]:
@@ -114,5 +115,5 @@ class MultiModalConverter:
         return self._docling_service.to_text(input_path, markdown=markdown, lang=self.LANG)
     
 
-#TODO: v1이고, v2에서는 pointNet기반으로 context vector를 embedding vector로 projection해서 줄듯. (이건 아직 한참 나중에 만들 계획)
+#TODO: v1이고, v2에서는 pointNet기반으로 context vector를 embedding vector로 projector에 거쳐서 줄듯. (이건 아직 한참 나중에 만들 계획)
 # PointNet으로 임베딩해서 기존 stl 등으로 구축해둔 DB에서 검색 후 리매핑하는 방식으로 구현 예정 (직접 파싱 대신 유사 형상 검색).
