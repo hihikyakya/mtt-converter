@@ -1,7 +1,15 @@
 import os
 from pathlib import Path
 
-from mtt.utils.mesh_llm_utils import parsing_stl, parsing_obj, parsing_ply, parsing_3mf
+from mtt.utils.mesh_llm_utils import (
+    parsing_stl,
+    parsing_obj,
+    parsing_ply,
+    parsing_3mf,
+    parsing_fbx,
+    parsing_step,
+    parsing_usd,
+)
 
 
 class MeshLLMService:
@@ -13,7 +21,7 @@ class MeshLLMService:
     def __init__(self, **kwargs):
         pass
 
-    def to_text(self, input_path: str | Path, markdown=True) -> str: #TODO: v1이고, v2에서는 pointNet기반으로 context vector를 embedding vector로 projection해서 줄듯.
+    def to_text(self, input_path: str | Path, markdown=True) -> str:
         _, ext = os.path.splitext(input_path)
         ext = ext.lower()
         if ext == ".stl":
@@ -24,6 +32,10 @@ class MeshLLMService:
             return parsing_ply(input_path, markdown=markdown)
         elif ext == ".3mf":
             return parsing_3mf(input_path, markdown=markdown)
-        # TODO: .step/.stp, .usd/.usdz, .fbx는 PointNet으로 임베딩해서 기존 stl 등으로 구축해둔 DB에서
-        # 검색 후 리매핑하는 방식으로 구현 예정 (직접 파싱 대신 유사 형상 검색).
+        elif ext == ".fbx":
+            return parsing_fbx(input_path, markdown=markdown)
+        elif ext in (".step", ".stp"):
+            return parsing_step(input_path, markdown=markdown)
+        elif ext in (".usd", ".usda", ".usdz"):
+            return parsing_usd(input_path, markdown=markdown)
         raise ValueError(f"Unreadable file or incorrect extension. input_path: {input_path}")
