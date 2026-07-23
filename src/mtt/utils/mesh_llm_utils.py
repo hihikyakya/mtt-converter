@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from mtt.types import LangType
 from mtt.utils.tools.stl_parser import _is_binary_stl, _parse_binary_stl, _parse_ascii_stl, _compute_stats
 from mtt.utils.tools.obj_parser import _parse_obj
 from mtt.utils.tools.ply_parser import _parse_ply
@@ -9,82 +10,125 @@ from mtt.utils.tools.step_parser import _parse_step
 from mtt.utils.tools.usd_parser import _is_usdz, _list_usdz_members, _parse_usd_with_pxr, _parse_usd_text
 from mtt.utils.tools.mesh_geometry import fan_triangulate, compute_triangle_stats, format_mesh_report
 
+_FBX_LABELS: dict[LangType, dict[str, str]] = {
+    "eng": {
+        "title": "FBX Parsing Result",
+        "format": "Format",
+        "model_count": "Model/mesh count",
+        "model_names": "Model/mesh names",
+        "material_count": "Material count",
+        "material_names": "Material names",
+        "textures": "Textures",
+        "none": "(none)",
+    },
+    "kor": {
+        "title": "FBX 파싱 결과",
+        "format": "포맷",
+        "model_count": "모델/메시 개수",
+        "model_names": "모델/메시 이름",
+        "material_count": "머티리얼 개수",
+        "material_names": "머티리얼 이름",
+        "textures": "텍스처",
+        "none": "(없음)",
+    },
+}
 
-def parsing_stl(input_path: str | Path, markdown: bool = True) -> str:
+_STEP_LABELS: dict[LangType, dict[str, str]] = {
+    "eng": {
+        "title": "STEP Parsing Result",
+        "description": "Description (DESCRIPTION)",
+        "schema_version": "Schema version",
+        "file_name": "Original file name",
+        "timestamp": "Timestamp",
+        "author": "Author (AUTHOR)",
+        "organization": "Organization (ORGANIZATION)",
+        "schema": "FILE_SCHEMA",
+        "product_count": "PRODUCT count",
+        "product_names": "PRODUCT names",
+        "none": "(none)",
+    },
+    "kor": {
+        "title": "STEP 파싱 결과",
+        "description": "설명(DESCRIPTION)",
+        "schema_version": "스키마 버전",
+        "file_name": "원본 파일명",
+        "timestamp": "작성 시각",
+        "author": "작성자(AUTHOR)",
+        "organization": "조직(ORGANIZATION)",
+        "schema": "FILE_SCHEMA",
+        "product_count": "PRODUCT 개수",
+        "product_names": "PRODUCT 이름",
+        "none": "(없음)",
+    },
+}
+
+_USD_LABELS: dict[LangType, dict[str, str]] = {
+    "eng": {
+        "title": "USD Parsing Result",
+        "format": "Format",
+        "usdz_detail": "USDZ (zip package)",
+        "usd_detail": "USD/USDA",
+        "prim_count": "Prim count",
+        "prim_list": "Prim list",
+        "member_count": "Internal file count",
+        "member_list": "Internal file list",
+    },
+    "kor": {
+        "title": "USD 파싱 결과",
+        "format": "포맷",
+        "usdz_detail": "USDZ (zip 패키지)",
+        "usd_detail": "USD/USDA",
+        "prim_count": "Prim 개수",
+        "prim_list": "Prim 목록",
+        "member_count": "내부 파일 개수",
+        "member_list": "내부 파일 목록",
+    },
+}
+
+
+def parsing_stl(input_path: str | Path, markdown: bool = True, lang: LangType = "eng") -> str:
     """
     STL 파일을 파싱해 요약 정보를 문자열로 반환한다.
- 
+
     Args:
         input_path: STL 파일 경로 (.stl)
         markdown: True면 마크다운 형식, False면 일반 텍스트로 반환
- 
+        lang: 출력 언어("eng"/"kor")
+
     Returns:
         파싱 결과 요약 문자열
     """
     path = Path(input_path)
     raw = path.read_bytes()
- 
+
     if _is_binary_stl(raw):
         mesh = _parse_binary_stl(raw)
     else:
         mesh = _parse_ascii_stl(raw.decode("ascii", errors="replace"))
- 
+
     stats = _compute_stats(mesh)
- 
     fmt_type = "Binary" if mesh.is_binary else "ASCII"
-    bbox_min = stats["bbox_min"]
-    bbox_max = stats["bbox_max"]
-    size = None
-    if bbox_min and bbox_max:
-        size = tuple(round(bmax - bmin, 4) for bmin, bmax in zip(bbox_min, bbox_max))
- 
-    if markdown:
-        lines = [
-            f"# STL 파싱 결과: {path.name}",
-            "",
-            f"- **포맷**: {fmt_type} STL",
-            f"- **솔리드 이름**: {mesh.name}",
-            f"- **삼각형(facet) 개수**: {mesh.triangle_count:,}",
-        ]
-        if bbox_min and bbox_max:
-            lines += [
-                f"- **바운딩 박스 최소값 (x,y,z)**: {tuple(round(v, 4) for v in bbox_min)}",
-                f"- **바운딩 박스 최대값 (x,y,z)**: {tuple(round(v, 4) for v in bbox_max)}",
-                f"- **모델 크기 (dx,dy,dz)**: {size}",
-            ]
-        lines += [
-            f"- **표면적(surface area)**: {stats['surface_area']:.4f}",
-            f"- **부피(volume, 근사)**: {abs(stats['signed_volume']):.4f}"
-            + ("" if stats['signed_volume'] >= 0 else "  ⚠️ (법선 방향이 뒤집혀 있을 수 있음)"),
-        ]
-        return "\n".join(lines)
-    else:
-        lines = [
-            f"STL 파싱 결과: {path.name}",
-            f"포맷: {fmt_type} STL",
-            f"솔리드 이름: {mesh.name}",
-            f"삼각형 개수: {mesh.triangle_count}",
-        ]
-        if bbox_min and bbox_max:
-            lines += [
-                f"바운딩 박스 최소값: {tuple(round(v, 4) for v in bbox_min)}",
-                f"바운딩 박스 최대값: {tuple(round(v, 4) for v in bbox_max)}",
-                f"모델 크기: {size}",
-            ]
-        lines += [
-            f"표면적: {stats['surface_area']:.4f}",
-            f"부피(근사): {abs(stats['signed_volume']):.4f}",
-        ]
-        return "\n".join(lines)
+
+    return format_mesh_report(
+        file_name=path.name,
+        format_label="STL",
+        format_detail=f"{fmt_type} STL",
+        solid_name=mesh.name,
+        face_count=mesh.triangle_count,
+        stats=stats,
+        markdown=markdown,
+        lang=lang,
+    )
 
 
-def parsing_obj(input_path: str | Path, markdown: bool = True) -> str:
+def parsing_obj(input_path: str | Path, markdown: bool = True, lang: LangType = "eng") -> str:
     """
     OBJ(Wavefront) 파일을 파싱해 요약 정보를 문자열로 반환한다.
 
     Args:
         input_path: OBJ 파일 경로 (.obj)
         markdown: True면 마크다운 형식, False면 일반 텍스트로 반환
+        lang: 출력 언어("eng"/"kor")
 
     Returns:
         파싱 결과 요약 문자열
@@ -105,16 +149,18 @@ def parsing_obj(input_path: str | Path, markdown: bool = True) -> str:
         face_count=len(obj.faces),
         stats=stats,
         markdown=markdown,
+        lang=lang,
     )
 
 
-def parsing_ply(input_path: str | Path, markdown: bool = True) -> str:
+def parsing_ply(input_path: str | Path, markdown: bool = True, lang: LangType = "eng") -> str:
     """
     PLY(Stanford Triangle Format) 파일을 파싱해 요약 정보를 문자열로 반환한다.
 
     Args:
         input_path: PLY 파일 경로 (.ply)
         markdown: True면 마크다운 형식, False면 일반 텍스트로 반환
+        lang: 출력 언어("eng"/"kor")
 
     Returns:
         파싱 결과 요약 문자열
@@ -136,16 +182,18 @@ def parsing_ply(input_path: str | Path, markdown: bool = True) -> str:
         face_count=ply.face_count,
         stats=stats,
         markdown=markdown,
+        lang=lang,
     )
 
 
-def parsing_3mf(input_path: str | Path, markdown: bool = True) -> str:
+def parsing_3mf(input_path: str | Path, markdown: bool = True, lang: LangType = "eng") -> str:
     """
     3MF(3D Manufacturing Format) 파일을 파싱해 요약 정보를 문자열로 반환한다.
 
     Args:
         input_path: 3MF 파일 경로 (.3mf)
         markdown: True면 마크다운 형식, False면 일반 텍스트로 반환
+        lang: 출력 언어("eng"/"kor")
 
     Returns:
         파싱 결과 요약 문자열
@@ -159,18 +207,21 @@ def parsing_3mf(input_path: str | Path, markdown: bool = True) -> str:
 
     stats = compute_triangle_stats(triangle_vertices)
 
+    object_detail = f"{data.object_count} objects" if lang == "eng" else f"오브젝트 {data.object_count}개"
+
     return format_mesh_report(
         file_name=path.name,
         format_label="3MF",
-        format_detail=f"오브젝트 {data.object_count}개",
+        format_detail=object_detail,
         solid_name=path.stem,
         face_count=len(data.triangles),
         stats=stats,
         markdown=markdown,
+        lang=lang,
     )
 
 
-def parsing_fbx(input_path: str | Path, markdown: bool = True) -> str:
+def parsing_fbx(input_path: str | Path, markdown: bool = True, lang: LangType = "eng") -> str:
     """
     FBX 파일을 파싱해 요약 정보를 문자열로 반환한다.
 
@@ -180,12 +231,14 @@ def parsing_fbx(input_path: str | Path, markdown: bool = True) -> str:
     Args:
         input_path: FBX 파일 경로 (.fbx)
         markdown: True면 마크다운 형식, False면 일반 텍스트로 반환
+        lang: 출력 언어("eng"/"kor")
 
     Returns:
         파싱 결과 요약 문자열
     """
     path = Path(input_path)
     raw = path.read_bytes()
+    labels = _FBX_LABELS.get(lang, _FBX_LABELS["eng"])
 
     if _is_binary_fbx(raw):
         fbx = _parse_binary_fbx(path)
@@ -200,32 +253,32 @@ def parsing_fbx(input_path: str | Path, markdown: bool = True) -> str:
 
     if markdown:
         lines = [
-            f"# FBX 파싱 결과: {path.name}",
+            f"# {labels['title']}: {path.name}",
             "",
-            f"- **포맷**: {fmt_type} FBX",
-            f"- **모델/메시 개수**: {len(model_names):,}",
-            f"- **모델/메시 이름**: {', '.join(model_names) if model_names else '(없음)'}",
-            f"- **머티리얼 개수**: {len(material_names):,}",
-            f"- **머티리얼 이름**: {', '.join(material_names) if material_names else '(없음)'}",
+            f"- **{labels['format']}**: {fmt_type} FBX",
+            f"- **{labels['model_count']}**: {len(model_names):,}",
+            f"- **{labels['model_names']}**: {', '.join(model_names) if model_names else labels['none']}",
+            f"- **{labels['material_count']}**: {len(material_names):,}",
+            f"- **{labels['material_names']}**: {', '.join(material_names) if material_names else labels['none']}",
         ]
         if texture_names:
-            lines.append(f"- **텍스처**: {', '.join(texture_names)}")
+            lines.append(f"- **{labels['textures']}**: {', '.join(texture_names)}")
         return "\n".join(lines)
     else:
         lines = [
-            f"FBX 파싱 결과: {path.name}",
-            f"포맷: {fmt_type} FBX",
-            f"모델/메시 개수: {len(model_names)}",
-            f"모델/메시 이름: {', '.join(model_names) if model_names else '(없음)'}",
-            f"머티리얼 개수: {len(material_names)}",
-            f"머티리얼 이름: {', '.join(material_names) if material_names else '(없음)'}",
+            f"{labels['title']}: {path.name}",
+            f"{labels['format']}: {fmt_type} FBX",
+            f"{labels['model_count']}: {len(model_names)}",
+            f"{labels['model_names']}: {', '.join(model_names) if model_names else labels['none']}",
+            f"{labels['material_count']}: {len(material_names)}",
+            f"{labels['material_names']}: {', '.join(material_names) if material_names else labels['none']}",
         ]
         if texture_names:
-            lines.append(f"텍스처: {', '.join(texture_names)}")
+            lines.append(f"{labels['textures']}: {', '.join(texture_names)}")
         return "\n".join(lines)
 
 
-def parsing_step(input_path: str | Path, markdown: bool = True) -> str:
+def parsing_step(input_path: str | Path, markdown: bool = True, lang: LangType = "eng") -> str:
     """
     STEP/STP(ISO-10303-21) 파일을 파싱해 헤더/PRODUCT 정보를 문자열로 반환한다.
 
@@ -236,6 +289,7 @@ def parsing_step(input_path: str | Path, markdown: bool = True) -> str:
     Args:
         input_path: STEP 파일 경로 (.step/.stp)
         markdown: True면 마크다운 형식, False면 일반 텍스트로 반환
+        lang: 출력 언어("eng"/"kor")
 
     Returns:
         파싱 결과 요약 문자열
@@ -244,39 +298,41 @@ def parsing_step(input_path: str | Path, markdown: bool = True) -> str:
     text = path.read_text(encoding="utf-8", errors="replace")
     data = _parse_step(text)
     header = data.header
+    labels = _STEP_LABELS.get(lang, _STEP_LABELS["eng"])
+    none = labels["none"]
 
     if markdown:
         lines = [
-            f"# STEP 파싱 결과: {path.name}",
+            f"# {labels['title']}: {path.name}",
             "",
-            f"- **설명(DESCRIPTION)**: {header.description or '(없음)'}",
-            f"- **스키마 버전**: {header.schema_version or '(없음)'}",
-            f"- **원본 파일명**: {header.file_name or '(없음)'}",
-            f"- **작성 시각**: {header.timestamp or '(없음)'}",
-            f"- **작성자(AUTHOR)**: {', '.join(header.author) if header.author else '(없음)'}",
-            f"- **조직(ORGANIZATION)**: {', '.join(header.organization) if header.organization else '(없음)'}",
-            f"- **FILE_SCHEMA**: {', '.join(header.schema) if header.schema else '(없음)'}",
-            f"- **PRODUCT 개수**: {len(data.product_names):,}",
-            f"- **PRODUCT 이름**: {', '.join(data.product_names) if data.product_names else '(없음)'}",
+            f"- **{labels['description']}**: {header.description or none}",
+            f"- **{labels['schema_version']}**: {header.schema_version or none}",
+            f"- **{labels['file_name']}**: {header.file_name or none}",
+            f"- **{labels['timestamp']}**: {header.timestamp or none}",
+            f"- **{labels['author']}**: {', '.join(header.author) if header.author else none}",
+            f"- **{labels['organization']}**: {', '.join(header.organization) if header.organization else none}",
+            f"- **{labels['schema']}**: {', '.join(header.schema) if header.schema else none}",
+            f"- **{labels['product_count']}**: {len(data.product_names):,}",
+            f"- **{labels['product_names']}**: {', '.join(data.product_names) if data.product_names else none}",
         ]
         return "\n".join(lines)
     else:
         lines = [
-            f"STEP 파싱 결과: {path.name}",
-            f"설명: {header.description or '(없음)'}",
-            f"스키마 버전: {header.schema_version or '(없음)'}",
-            f"원본 파일명: {header.file_name or '(없음)'}",
-            f"작성 시각: {header.timestamp or '(없음)'}",
-            f"작성자: {', '.join(header.author) if header.author else '(없음)'}",
-            f"조직: {', '.join(header.organization) if header.organization else '(없음)'}",
-            f"FILE_SCHEMA: {', '.join(header.schema) if header.schema else '(없음)'}",
-            f"PRODUCT 개수: {len(data.product_names)}",
-            f"PRODUCT 이름: {', '.join(data.product_names) if data.product_names else '(없음)'}",
+            f"{labels['title']}: {path.name}",
+            f"{labels['description']}: {header.description or none}",
+            f"{labels['schema_version']}: {header.schema_version or none}",
+            f"{labels['file_name']}: {header.file_name or none}",
+            f"{labels['timestamp']}: {header.timestamp or none}",
+            f"{labels['author']}: {', '.join(header.author) if header.author else none}",
+            f"{labels['organization']}: {', '.join(header.organization) if header.organization else none}",
+            f"{labels['schema']}: {', '.join(header.schema) if header.schema else none}",
+            f"{labels['product_count']}: {len(data.product_names)}",
+            f"{labels['product_names']}: {', '.join(data.product_names) if data.product_names else none}",
         ]
         return "\n".join(lines)
 
 
-def parsing_usd(input_path: str | Path, markdown: bool = True) -> str:
+def parsing_usd(input_path: str | Path, markdown: bool = True, lang: LangType = "eng") -> str:
     """
     USD/USDA/USDZ 파일을 파싱해 prim 계층 정보를 문자열로 반환한다.
 
@@ -287,12 +343,14 @@ def parsing_usd(input_path: str | Path, markdown: bool = True) -> str:
     Args:
         input_path: USD 파일 경로 (.usd/.usda/.usdz)
         markdown: True면 마크다운 형식, False면 일반 텍스트로 반환
+        lang: 출력 언어("eng"/"kor")
 
     Returns:
         파싱 결과 요약 문자열
     """
     path = Path(input_path)
     is_usdz = _is_usdz(path)
+    labels = _USD_LABELS.get(lang, _USD_LABELS["eng"])
 
     try:
         data = _parse_usd_with_pxr(path)
@@ -307,34 +365,34 @@ def parsing_usd(input_path: str | Path, markdown: bool = True) -> str:
     usdz_members = _list_usdz_members(path) if is_usdz else []
 
     prim_lines = [f"{prim.name} ({prim.type_name})" for prim in prims]
-    fmt_type = "USDZ (zip 패키지)" if is_usdz else "USD/USDA"
+    fmt_type = labels["usdz_detail"] if is_usdz else labels["usd_detail"]
 
     if markdown:
         lines = [
-            f"# USD 파싱 결과: {path.name}",
+            f"# {labels['title']}: {path.name}",
             "",
-            f"- **포맷**: {fmt_type}",
-            f"- **Prim 개수**: {len(prims):,}",
+            f"- **{labels['format']}**: {fmt_type}",
+            f"- **{labels['prim_count']}**: {len(prims):,}",
         ]
         if prim_lines:
-            lines.append("- **Prim 목록**:")
+            lines.append(f"- **{labels['prim_list']}**:")
             lines += [f"  - {line}" for line in prim_lines]
         if usdz_members:
-            lines.append(f"- **내부 파일 개수**: {len(usdz_members):,}")
-            lines.append("- **내부 파일 목록**:")
+            lines.append(f"- **{labels['member_count']}**: {len(usdz_members):,}")
+            lines.append(f"- **{labels['member_list']}**:")
             lines += [f"  - {member}" for member in usdz_members]
         return "\n".join(lines)
     else:
         lines = [
-            f"USD 파싱 결과: {path.name}",
-            f"포맷: {fmt_type}",
-            f"Prim 개수: {len(prims)}",
+            f"{labels['title']}: {path.name}",
+            f"{labels['format']}: {fmt_type}",
+            f"{labels['prim_count']}: {len(prims)}",
         ]
         if prim_lines:
-            lines.append("Prim 목록:")
+            lines.append(f"{labels['prim_list']}:")
             lines += [f"  {line}" for line in prim_lines]
         if usdz_members:
-            lines.append(f"내부 파일 개수: {len(usdz_members)}")
-            lines.append("내부 파일 목록:")
+            lines.append(f"{labels['member_count']}: {len(usdz_members)}")
+            lines.append(f"{labels['member_list']}:")
             lines += [f"  {member}" for member in usdz_members]
         return "\n".join(lines)

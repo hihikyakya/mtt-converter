@@ -1,5 +1,34 @@
 from __future__ import annotations
 
+from mtt.types import LangType
+
+_LABELS: dict[LangType, dict[str, str]] = {
+    "eng": {
+        "title": "Parsing Result",
+        "format": "Format",
+        "solid_name": "Solid name",
+        "facet_count": "Triangle (facet) count",
+        "bbox_min": "Bounding box min (x,y,z)",
+        "bbox_max": "Bounding box max (x,y,z)",
+        "size": "Model size (dx,dy,dz)",
+        "surface_area": "Surface area",
+        "volume": "Volume (approx.)",
+        "flipped_normal": "  ⚠️ (normal direction may be flipped)",
+    },
+    "kor": {
+        "title": "파싱 결과",
+        "format": "포맷",
+        "solid_name": "솔리드 이름",
+        "facet_count": "삼각형(facet) 개수",
+        "bbox_min": "바운딩 박스 최소값 (x,y,z)",
+        "bbox_max": "바운딩 박스 최대값 (x,y,z)",
+        "size": "모델 크기 (dx,dy,dz)",
+        "surface_area": "표면적(surface area)",
+        "volume": "부피(volume, 근사)",
+        "flipped_normal": "  ⚠️ (법선 방향이 뒤집혀 있을 수 있음)",
+    },
+}
+
 
 def fan_triangulate(
     vertices: list[tuple[float, float, float]], face_indices: list[int]
@@ -64,50 +93,56 @@ def format_mesh_report(
     stats: dict,
     markdown: bool = True,
     format_detail: str | None = None,
+    lang: LangType = "eng",
 ) -> str:
-    '''3D 메시 파싱 결과(obj/ply/3mf 공통)를 요약 문자열로 포맷한다.'''
+    '''3D 메시 파싱 결과(stl/obj/ply/3mf 공통)를 요약 문자열로 포맷한다.'''
+    labels = _LABELS.get(lang, _LABELS["eng"])
+
     bbox_min = stats["bbox_min"]
     bbox_max = stats["bbox_max"]
     size = None
     if bbox_min and bbox_max:
         size = tuple(round(bmax - bmin, 4) for bmin, bmax in zip(bbox_min, bbox_max))
 
+    volume_text = f"{abs(stats['signed_volume']):.4f}"
+    if stats["signed_volume"] < 0:
+        volume_text += labels["flipped_normal"]
+
     if markdown:
-        lines = [f"# {format_label} 파싱 결과: {file_name}", ""]
+        lines = [f"# {format_label} {labels['title']}: {file_name}", ""]
         if format_detail:
-            lines.append(f"- **포맷**: {format_detail}")
+            lines.append(f"- **{labels['format']}**: {format_detail}")
         lines += [
-            f"- **솔리드 이름**: {solid_name}",
-            f"- **삼각형(facet) 개수**: {face_count:,}",
+            f"- **{labels['solid_name']}**: {solid_name}",
+            f"- **{labels['facet_count']}**: {face_count:,}",
         ]
         if bbox_min and bbox_max:
             lines += [
-                f"- **바운딩 박스 최소값 (x,y,z)**: {tuple(round(v, 4) for v in bbox_min)}",
-                f"- **바운딩 박스 최대값 (x,y,z)**: {tuple(round(v, 4) for v in bbox_max)}",
-                f"- **모델 크기 (dx,dy,dz)**: {size}",
+                f"- **{labels['bbox_min']}**: {tuple(round(v, 4) for v in bbox_min)}",
+                f"- **{labels['bbox_max']}**: {tuple(round(v, 4) for v in bbox_max)}",
+                f"- **{labels['size']}**: {size}",
             ]
         lines += [
-            f"- **표면적(surface area)**: {stats['surface_area']:.4f}",
-            f"- **부피(volume, 근사)**: {abs(stats['signed_volume']):.4f}"
-            + ("" if stats['signed_volume'] >= 0 else "  ⚠️ (법선 방향이 뒤집혀 있을 수 있음)"),
+            f"- **{labels['surface_area']}**: {stats['surface_area']:.4f}",
+            f"- **{labels['volume']}**: {volume_text}",
         ]
         return "\n".join(lines)
     else:
-        lines = [f"{format_label} 파싱 결과: {file_name}"]
+        lines = [f"{format_label} {labels['title']}: {file_name}"]
         if format_detail:
-            lines.append(f"포맷: {format_detail}")
+            lines.append(f"{labels['format']}: {format_detail}")
         lines += [
-            f"솔리드 이름: {solid_name}",
-            f"삼각형 개수: {face_count}",
+            f"{labels['solid_name']}: {solid_name}",
+            f"{labels['facet_count']}: {face_count}",
         ]
         if bbox_min and bbox_max:
             lines += [
-                f"바운딩 박스 최소값: {tuple(round(v, 4) for v in bbox_min)}",
-                f"바운딩 박스 최대값: {tuple(round(v, 4) for v in bbox_max)}",
-                f"모델 크기: {size}",
+                f"{labels['bbox_min']}: {tuple(round(v, 4) for v in bbox_min)}",
+                f"{labels['bbox_max']}: {tuple(round(v, 4) for v in bbox_max)}",
+                f"{labels['size']}: {size}",
             ]
         lines += [
-            f"표면적: {stats['surface_area']:.4f}",
-            f"부피(근사): {abs(stats['signed_volume']):.4f}",
+            f"{labels['surface_area']}: {stats['surface_area']:.4f}",
+            f"{labels['volume']}: {volume_text}",
         ]
         return "\n".join(lines)

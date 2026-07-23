@@ -5,7 +5,7 @@ from typing import get_args
 from mtt.service.docling import DoclingService
 from mtt.service.mesh_llm import MeshLLMService
 from mtt.service.caption_explaner import CaptionExplanerService
-from mtt.types import ModeType, CaptionModelType as ModelType
+from mtt.types import ModeType, CaptionModelType as ModelType, LangType
 
 
 def print_model_list():
@@ -52,6 +52,8 @@ class MultiModalConverter:
         ".glb": "3dmodel",
     }
 
+    LANG: LangType = "eng"  # default : eng
+
     def __init__(self, **kwargs):
         # TODO: 나중에 임베딩 모델 api 관련해서 파라미터를 받을 수 있게하거나 할듯. 그리고 일부 시스템 프롬프트를 조절할 수 있게 할듯.
         self._docling_service = DoclingService()
@@ -60,11 +62,9 @@ class MultiModalConverter:
             model_name=kwargs.get("model_name", "gemini-2.5-flash"), # default: gemini
             api_key=kwargs.get("api_key")
         )
+        self.LANG: LangType = kwargs.get("lang", self.LANG)
 
     def convert(self, input_path: str | Path, sub_prompt=None, markdown=True, mode: ModeType | None = None):
-        if sub_prompt is None:
-            sub_prompt = "Describe image in detail."
-
         if mode is None:
             print("[Warning] The 'mode' argument is missing, so the 'mode' value is estimated and used.")
             _, ext = os.path.splitext(input_path)
@@ -93,25 +93,25 @@ class MultiModalConverter:
         '''
         image의 정보를 텍스트로 설명 ; 캡셔닝
         '''
-        return self._caption_explaner_service.to_text(input_path, sub_prompt=sub_prompt, markdown=markdown) #이미지 용 멀티모달 임베딩 api를 찾아서 구현할듯.
+        return self._caption_explaner_service.to_text(input_path, sub_prompt=sub_prompt, markdown=markdown, lang=self.LANG) #이미지 용 멀티모달 임베딩 api를 찾아서 구현할듯.
 
     def ocr(self, input_path: str | Path, markdown=True) -> str:
         '''
         image내 텍스트를 ocr하여 얻어옴.
         '''
-        return self._docling_service.to_text(input_path, markdown=markdown)
+        return self._docling_service.to_text(input_path, markdown=markdown, lang=self.LANG)
 
     def scan3dmodel(self, input_path: str | Path, markdown=True) -> str:
         '''
         3D 모델을 텍스트로 설명
         '''
-        return self._mesh_llm_service.to_text(input_path, markdown=markdown) # TODO: point net과 parser들로 구현할 예정 ; 가능한 parser는 claude가 이미 구현한듯?
+        return self._mesh_llm_service.to_text(input_path, markdown=markdown, lang=self.LANG) # TODO: point net과 parser들로 구현할 예정 ; 가능한 parser는 claude가 이미 구현한듯?
 
     def doc2text(self, input_path: str | Path, markdown=True) -> str:
         '''
         문서를 텍스트로 변환 [docling 모듈을 이용]
         '''
-        return self._docling_service.to_text(input_path, markdown=markdown)
+        return self._docling_service.to_text(input_path, markdown=markdown, lang=self.LANG)
     
 
 #TODO: v1이고, v2에서는 pointNet기반으로 context vector를 embedding vector로 projection해서 줄듯. (이건 아직 한참 나중에 만들 계획)

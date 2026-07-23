@@ -2,7 +2,13 @@ import re
 from pathlib import Path
 from docling.document_converter import DocumentConverter
 
+from mtt.types import LangType
 from mtt.utils.docling_utils import convert_document, document_to_markdown, document_to_text
+
+_EMPTY_OCR_PLACEHOLDER: dict[LangType, str] = {
+    "eng": "<!-- empty OCR result -->",
+    "kor": "<!-- OCR 결과가 비어있음 -->",
+}
 
 
 class DoclingService:
@@ -15,11 +21,12 @@ class DoclingService:
     def __init__(self, converter: DocumentConverter | None = None):
         self._converter = converter or DocumentConverter()
 
-    def to_text(self, input_path: str | Path, markdown=True) -> str:
+    def to_text(self, input_path: str | Path, markdown=True, lang: LangType = "eng") -> str:
         result = convert_document(self._converter, input_path)
 
         text=document_to_markdown(result) if markdown else document_to_text(result)
 
         # Rapid OCR exception
-        text=re.sub(r"RapidOCR returned empty result!", "<!-- empty OCR result -->", text)
+        placeholder = _EMPTY_OCR_PLACEHOLDER.get(lang, _EMPTY_OCR_PLACEHOLDER["eng"])
+        text=re.sub(r"RapidOCR returned empty result!", placeholder, text)
         return text

@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 
+from mtt.types import LangType
 from mtt.utils.mesh_llm_utils import (
     parsing_stl,
     parsing_obj,
@@ -21,21 +22,21 @@ class MeshLLMService:
     def __init__(self, **kwargs):
         pass
 
-    def to_text(self, input_path: str | Path, markdown=True) -> str:
+    def to_text(self, input_path: str | Path, markdown=True, lang: LangType = "eng") -> str:
         _, ext = os.path.splitext(input_path)
         ext = ext.lower()
         if ext == ".stl":
-            return parsing_stl(input_path, markdown=markdown)
+            return parsing_stl(input_path, markdown=markdown, lang=lang)
         elif ext == ".obj":
-            return parsing_obj(input_path, markdown=markdown)
+            return parsing_obj(input_path, markdown=markdown, lang=lang)
         elif ext == ".ply":
-            return parsing_ply(input_path, markdown=markdown)
+            return parsing_ply(input_path, markdown=markdown, lang=lang)
         elif ext == ".3mf":
-            return parsing_3mf(input_path, markdown=markdown)
+            return parsing_3mf(input_path, markdown=markdown, lang=lang)
         elif ext == ".fbx":
-            return parsing_fbx(input_path, markdown=markdown)
+            return parsing_fbx(input_path, markdown=markdown, lang=lang)
         elif ext in (".step", ".stp"):
-            return parsing_step(input_path, markdown=markdown)
+            return parsing_step(input_path, markdown=markdown, lang=lang)
         elif ext in (".usd", ".usda", ".usdz"):
-            return parsing_usd(input_path, markdown=markdown)
+            return parsing_usd(input_path, markdown=markdown, lang=lang)
         raise ValueError(f"Unreadable file or incorrect extension. input_path: {input_path}")
